@@ -1,7 +1,5 @@
 <?php
 
-
-
 ////// Set site to maintenance mode //////
 
 function tt_maintenance_mode() {
@@ -69,48 +67,7 @@ function tt_maintenance_mode() {
 ////// END Set site to maintenance mode //////
 
 
-
-
-
-////// BACKEND SHOW USER ROLE //////
-
-function add_user_role_column($columns) {
-
-    $columns['your_role'] = __('Registered as');
-
-    return $columns;
-
-}
-
-add_filter('manage_users_columns', 'add_user_role_column');
-
-
-
-function display_user_role($value, $column_name, $user_id) {
-
-    if ($column_name == 'your_role') {
-
-        $user_role = get_field('your_role', 'user_'.$user_id);
-
-        return $user_role;
-
-    }
-
-    return $value;
-
-}
-
-add_action('manage_users_custom_column', 'display_user_role', 10, 3);
-
-////// END BACKEND SHOW USER ROLE //////
-
-
-
-
-
 ////// HIDE/SHOW - USER LOGGED IN  //////
-
-
 
 function critical_logged_in_styles() {
 
@@ -300,7 +257,7 @@ add_action('wp_footer', 'show_hide_logged_in');
 
 
 
-// NOTIFICATION LOGIN REQUIRED - LOGGED OUT USERS - Enqueue jQuery
+// RESTRICTION - NOTIFICATION LOGIN REQUIRED - LOGGED OUT USERS - Enqueue jQuery
 
 function enqueue_login_required_script() {
 
@@ -349,10 +306,7 @@ add_action('wp_enqueue_scripts', 'enqueue_login_required_script');
 
 
 
-
-
-
-// INITIATIVES /// SHOW EDIT BUTTON ONLY TO POST OWNER ///
+// RESTRICTION - INITIATIVES /// SHOW EDIT BUTTON ONLY TO POST OWNER ///
 
 function show_hide_edit_button() {
 
@@ -392,43 +346,7 @@ function show_hide_edit_button() {
 
 add_action('wp_footer', 'show_hide_edit_button');
 
-
-
-
-
-/////////////////////////// TESTING FUNCTIONS //////////////////////////    
-
-
-
 // START CUSTOM AUTHOR COMMENTS aka "Contributions"
-
-// function current_author_comments_shortcode() {
-
-//   $author_id = get_the_author_ID();
-
-//   $comments = get_comments(array('author' => $author_id));
-
-//   $output = '';
-
-//   foreach ($comments as $comment) {
-
-//     $output .= '<a href="' . get_permalink($comment->comment_post_ID) . '">' . get_the_title($comment->comment_post_ID) . '</a>';
-
-//     $output .= '<br>' . $comment->comment_date;
-
-//     $output .= '<br>' . wp_trim_words($comment->comment_content, 20) . " " . "Author ID: " . $author_id;
-
-//   }
-
-  
-
-//   return $output;
-
-// }
-
-// add_shortcode('current_author_comments', 'current_author_comments_shortcode');
-// START CUSTOM AUTHOR COMMENTS aka "Contributions"
-
 function current_author_comments_shortcode() {
     // Get the queried author (profile being viewed)
     $author = get_queried_object();
@@ -481,45 +399,10 @@ function current_author_comments_shortcode() {
 add_shortcode('current_author_comments', 'current_author_comments_shortcode');
 
 // END CUSTOM AUTHOR COMMENTS
-// SHOW COMMENT COUNT IN THE BACKEND
-// Add a new column to the Users list table
-function add_comments_column_to_users($columns) {
-    $columns['user_comments'] = 'Comments';
-    return $columns;
-}
-add_filter('manage_users_columns', 'add_comments_column_to_users');
-
-// Fill the custom column with data
-function show_comments_column_in_users($value, $column_name, $user_id) {
-    if ($column_name === 'user_comments') {
-        // Count approved comments by user
-        $count = get_comments(array(
-            'user_id' => $user_id,
-            'count' => true,
-            'status' => 'approve',
-        ));
-
-        // Link to the comments list filtered by user
-        $url = admin_url('edit-comments.php?user_id=' . $user_id);
-
-        return '<a href="' . esc_url($url) . '">' . intval($count) . '</a>';
-    }
-
-    return $value;
-}
-add_filter('manage_users_custom_column', 'show_comments_column_in_users', 10, 3);
-
-
-
-
-
-
-
-
 
 /**
 
- * WP COMMENTS SECTION CUSTOMIZATIONS
+ * WP CORE COMMENTS SECTION CUSTOMIZATIONS
 
  * https://www.malcare.com/blog/change-wordpress-login-url/
 
@@ -535,10 +418,7 @@ add_filter('manage_users_custom_column', 'show_comments_column_in_users', 10, 3)
 
  */
 
-
-
 // 1.  
-
 
 
 // 2. Login Redirect - Global WP - DISABLED
@@ -547,11 +427,7 @@ function redirect_user_login_url($login_url, $redirect){
 
     $frontend_login_url = $login_url; // store the original login URL
 
-
-
     $login_url = site_url( '/registration/', 'login' );
-
-
 
     // code to run on frontend only
 
@@ -583,8 +459,6 @@ function redirect_current_user_to_profile() {
 
         $user_profile = get_queried_object();
 
-
-
         // Only redirect if the user is logged in, viewing their own profile, and is NOT an administrator
 
         if (
@@ -609,19 +483,11 @@ function redirect_current_user_to_profile() {
 
 add_action( 'template_redirect', 'redirect_current_user_to_profile' );
 
-
-
-
-
- 
-
 // 3 & 4: Handle comment author display (nickname + profile link)
 
 function customize_comment_author_display($author, $comment_ID, $comment) {
 
     $user_id = $comment->user_id;
-
-    
 
     if ($user_id) {
 
@@ -633,7 +499,6 @@ function customize_comment_author_display($author, $comment_ID, $comment) {
 
             $display_name = $user_info->nickname;
 
-            
 
             // Check if current user is the comment author
 
@@ -692,154 +557,79 @@ add_filter('get_comment_author', 'customize_comment_author_display', 10, 3);
 
 
 
+// RESTRICTIONS - ACF
 
+// Restrict only to youtube links
+function validate_youtube_video_url($valid, $value, $field, $input) {
+    if (!$value) {
+        return $valid; // Allow empty if the field is not required
+    }
 
+    // Regex pattern to match YouTube video URLs
+    $pattern = '/^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w\-]{11}/';
 
+    if (!preg_match($pattern, $value)) {
+        return 'Please enter a valid YouTube video URL (e.g. https://www.youtube.com/watch?v=sample).';
+    }
 
+    return $valid;
+}
+add_filter('acf/validate_value/name=youtube_video_link', 'validate_youtube_video_url', 10, 4);
 
 
+////// BACKEND - SHOW USER ROLE //////
 
+function add_user_role_column($columns) {
 
+    $columns['your_role'] = __('Registered as');
 
+    return $columns;
 
+}
+add_filter('manage_users_columns', 'add_user_role_column');
+function display_user_role($value, $column_name, $user_id) {
 
+    if ($column_name == 'your_role') {
 
+        $user_role = get_field('your_role', 'user_'.$user_id);
 
-// SHOW COMMENTER NICKNAME - WORKING!
+        return $user_role;
 
-// function display_commenter_nickname( $author, $comment_ID, $comment ) {
+    }
 
-//     $user_id = $comment->user_id;
-
-
-
-//     if ( $user_id ) {
-
-//         $user_info = get_userdata( $user_id );
-
-//         if ( $user_info && ! empty( $user_info->nickname ) ) {
-
-//             return esc_html( $user_info->nickname );
-
-//         }
-
-//     }
-
-
-
-//     return $author;
-
-//     }
-
-// add_filter( 'get_comment_author', 'display_commenter_nickname', 10, 3 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function my_custom_shortcode() {
-
-    
-
-    //$user_id = isset($_GET['uid']) ? sanitize_text_field($_GET['uid']) : '';
-
-    // if (isset($_GET['uid'])) {
-
-    //     $user_id = sanitize_text_field($_GET['uid']);
-
-    //   } else {
-
-    //     $user_id = '';
-
-    //   }
-
-
-
-    //echo $user_id;
-
-    // $user = get_user_by( 'id', $user_id );
-
-    // print_r($user);
-
-    //echo "Role" . get_field("your_role" , $user_id );
-
-    // Use it however you need, e.g., output it
-
-    //echo "here" . $user->email;
+    return $value;
 
 }
 
-//add_shortcode('my_shortcode', 'my_custom_shortcode');
+add_action('manage_users_custom_column', 'display_user_role', 10, 3);
 
+////// END BACKEND SHOW USER ROLE //////
 
+// BACKEND - SHOW COMMENT COUNT IN USER LIST
+// Add a new column to the Users list table
+function add_comments_column_to_users($columns) {
+    $columns['user_comments'] = 'Comments';
+    return $columns;
+}
+add_filter('manage_users_columns', 'add_comments_column_to_users');
 
+// Fill the custom column with data
+function show_comments_column_in_users($value, $column_name, $user_id) {
+    if ($column_name === 'user_comments') {
+        // Count approved comments by user
+        $count = get_comments(array(
+            'user_id' => $user_id,
+            'count' => true,
+            'status' => 'approve',
+        ));
 
+        // Link to the comments list filtered by user
+        $url = admin_url('edit-comments.php?user_id=' . $user_id);
 
-// $current_user = wp_get_current_user();
+        return '<a href="' . esc_url($url) . '">' . intval($count) . '</a>';
+    }
 
-// $current_user_id = $current_user->ID;
-
-// $my_location = get_field('user_country', 'user_'.$current_user->ID);
-
-
-
-// echo "////////////////////////////<br>";
-
-// echo "User Country: " . $my_location . "<br>";
-
-// echo "User ID: " . $current_user_id . "<br>";
-
-// echo "////////////////////////////<br>";
+    return $value;
+}
+add_filter('manage_users_custom_column', 'show_comments_column_in_users', 10, 3);
 
